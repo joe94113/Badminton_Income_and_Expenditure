@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>羽球收支紀錄</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
       font-family: sans-serif;
@@ -40,85 +40,76 @@
     button:hover {
       background-color: #219150;
     }
+    .success {
+      text-align: center;
+      color: green;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
   <h1>羽球收支紀錄表</h1>
-  <form id="form">
+
+  <form id="badminton-form" action="https://script.google.com/macros/s/AKfycbzTX5aI1q_V6PKlX58xAWeo1JTKZ1LvOMYUbf79e2Yak-mMVT0lWCtKFHVUwkHfE7g/exec" method="POST" target="hidden_iframe" onsubmit="return handleSubmit();">
     <label>日期：
-      <input type="date" name="date" required>
+      <input type="date" name="date" required />
     </label>
 
     <label>參加人員（姓名）：
-      <input type="text" name="participants" placeholder="例如：小明、小美">
+      <input type="text" name="participants" />
     </label>
 
     <label>人數：
-      <input type="number" name="people_count" required>
+      <input type="number" name="people_count" required />
     </label>
 
     <label>單次收入小計（元）：
-      <input type="number" name="single_total" required>
+      <input type="number" name="single_total" required />
     </label>
 
     <label>半年繳人數：
-      <input type="number" name="semi_count" required>
+      <input type="number" name="semi_count" required />
     </label>
 
     <label>備註：
-      <input type="text" name="note" placeholder="例如：某人補球、遲到未繳費">
+      <input type="text" name="note" />
     </label>
+
+    <!-- 自動帶入固定欄位（你也可改成 visible） -->
+    <input type="hidden" name="place_fee" value="950" />
+    <input type="hidden" name="ball_count" value="7" />
+    <input type="hidden" name="ball_fee" value="420" />
+    <input type="hidden" name="total_cost" />
+    <input type="hidden" name="total_income" />
+    <input type="hidden" name="balance" />
 
     <button type="submit">送出記錄</button>
   </form>
 
+  <div class="success" id="successMsg" style="display: none;">✅ 資料已成功送出！</div>
+  <iframe name="hidden_iframe" style="display:none;" onload="document.getElementById('successMsg').style.display='block';"></iframe>
+
   <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbzTX5aI1q_V6PKlX58xAWeo1JTKZ1LvOMYUbf79e2Yak-mMVT0lWCtKFHVUwkHfE7g/exec'; // ⬅️ 請改成你部署後的 Apps Script 網址
+    function handleSubmit() {
+      const form = document.getElementById("badminton-form");
 
-    document.getElementById('form').addEventListener('submit', e => {
-      e.preventDefault();
-      const form = e.target;
+      // 自動計算總收入與盈虧
+      const single_total = parseInt(form.single_total.value || 0);
+      const semi_count = parseInt(form.semi_count.value || 0);
+      const total_income = single_total + semi_count * 230;
+      const total_cost = 950 + 7 * 60;
+      const balance = total_income - total_cost;
 
-      // 固定成本資料
-      const placeFee = 950;
-      const ballCount = 7;
-      const ballFee = ballCount * 60;
-      const totalCost = placeFee + ballFee;
+      // 自動填入隱藏欄位
+      form.total_income.value = total_income;
+      form.total_cost.value = total_cost;
+      form.balance.value = balance;
 
-      // 使用者輸入 + 自動計算
-      const singleTotal = parseInt(form.single_total.value || 0);
-      const semiCount = parseInt(form.semi_count.value || 0);
-      const totalIncome = singleTotal + semiCount * 230;
-      const balance = totalIncome - totalCost;
+      // 隱藏提示再顯示（避免 iframe 載入失敗時誤觸發）
+      document.getElementById('successMsg').style.display = 'none';
 
-      const data = {
-        date: form.date.value,
-        participants: form.participants.value,
-        people_count: form.people_count.value,
-        single_total: singleTotal,
-        semi_count: semiCount,
-        total_income: totalIncome,
-        place_fee: placeFee,
-        ball_count: ballCount,
-        ball_fee: ballFee,
-        total_cost: totalCost,
-        balance: balance,
-        note: form.note.value
-      };
-
-      fetch(scriptURL, {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' },
-      })
-      .then(response => {
-        alert("✅ 成功送出資料！");
-        form.reset();
-      })
-      .catch(error => {
-        alert("❌ 發生錯誤：" + error.message);
-      });
-    });
+      return true; // 繼續提交
+    }
   </script>
 </body>
 </html>
